@@ -148,5 +148,11 @@ echo
 echo "$INPUT"|$CURL -f -X POST -H "Authorization: Bearer $ACCESSTOKEN" -H "Content-Type: application/json" "https://api.honeywell.com/v2/devices/thermostats/$DEVICEID?apikey=$CLIENTID&locationId=$LOCATIONID" -d @-
 if [ "$?" != 0 ]; then
     ERROR=true
-    mailprice "Switching thermostat mode failed"
+    if $LASTERROR; then
+	echo "Switching thermostat mode failed"
+    else
+	mailprice "Switching thermostat mode failed"
+    fi
+    HIGHPRICE=$LASTHIGHPRICE
+    CATCHUP=$LASTCATCHUP
 fi

@@ -29,13 +29,15 @@ echo "Outdoor temperature: $OUTDOORTEMP"
 
 LASTERROR=false
 LASTHIGHPRICE=false
+LASTCATCHUP=false
 if [ -f $HERE/.status ]; then
     . $HERE/.status
 fi
 
 HIGHPRICE=$LASTHIGHPRICE
+CATCHUP=$LASTCATCHUP
 ERROR=false
-trap '(echo LASTERROR=$ERROR;echo LASTHIGHPRICE=$HIGHPRICE) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
+trap '(echo LASTERROR=$ERROR;echo LASTHIGHPRICE=$HIGHPRICE;echo LASTCATCHUP=$CATCHUP) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
 MSG=""
 if [ -z "$PRICE" ] || [ "$PRICE" = null ]; then
     ERROR=true
@@ -72,37 +74,66 @@ else
     HIGHPRICE=false
 fi
 echo "HIGHPRICE: $HIGHPRICE"
-if [ "$HIGHPRICE" = "$LASTHIGHPRICE" ]; then
-    echo "No change in HIGHPRICE mode"
-    exit
-fi
-VALUES="$(echo "$STATUS"|jq .changeableValues)"
-HEATCOOLMODE="$(echo "$VALUES"|jq -r .heatCoolMode)"
-if [ "$HEATCOOLMODE" != Heat ]; then
-    if $HIGHPRICE; then 
-	mailprice "Electricity price has exceeded $MAXPRICE"
-    else
-	mailprice "Electricity price is low again"
-    fi
-    exit
-fi
 
+VALUES="$(echo "$STATUS"|jq .changeableValues)"
 PRESERVEVALS="heatSetpoint coolSetpoint thermostatSetpointStatus nextPeriodTime"
 for VAR in $PRESERVEVALS; do
     eval $VAR="\`echo \"\$VALUES\"|jq -r .$VAR\`"
     eval echo "\$VAR: \$$VAR"
 done
-if $HIGHPRICE; then
-    mailprice "Switching on emergency heat"
+
+let TEMPDIFF="$heatSetpoint - $INDOORTEMP"
+if $LASTCATCHUP; then
+    if [ $TEMPDIFF -le 0 ]; then
+	CATCHUP=false
+    fi
 else
-    mailprice "Switching off emergency heat"
+    if [ $TEMPDIFF -ge 2 ]; then
+	CATCHUP=true
+    fi
+fi
+echo "CATCHUP: $CATCHUP"
+
+if [ "$HIGHPRICE" = "$LASTHIGHPRICE" ]; then
+    echo "No change in HIGHPRICE mode"
+    if [ "$CATCHUP" = "$LASTCATCHUP" ]; then
+	echo "No change in CATCHUP mode"
+	exit
+    fi
+fi
+
+HEATCOOLMODE="$(echo "$VALUES"|jq -r .heatCoolMode)"
+if [ "$HEATCOOLMODE" != Heat ]; then
+    if [ "$HIGHPRICE" != "$LASTHIGHPRICE" ]; then
+	if $HIGHPRICE; then 
+	    mailprice "Electricity price has exceeded $MAXPRICE"
+	else
+	    mailprice "Electricity price is low again"
+	fi
+    fi
+    exit
+fi
+
+if [ "$HIGHPRICE" != "$LASTHIGHPRICE" ]; then
+    if $HIGHPRICE; then
+	mailprice "Switching on emergency heat"
+    else
+	mailprice "Switching off emergency heat"
+    fi
+else
+    # must be a catchup mode transition
+    if $CATCHUP; then
+	echo "Switching on emergency heat"
+    else
+	echo "Switching off emergency heat"
+    fi
 fi
 INPUT="$(
     echo '{'
     for VAR in $PRESERVEVALS; do 
 	eval echo "\"  \\\"$VAR\\\": \\\"\$$VAR\\\",\""
     done
-    if $HIGHPRICE; then
+    if $HIGHPRICE || $CATCHUP; then
 	echo '  "mode": "EmergencyHeat",'
 	echo '  "autoChangeoverActive": false,'
 	echo '  "emergencyHeatActive": true'

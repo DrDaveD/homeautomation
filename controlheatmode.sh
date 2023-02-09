@@ -1,5 +1,6 @@
 #!/bin/bash
 MAXPRICE=6
+LOWPRICE=4
 
 HERE="$(dirname $0)"
 ME="$(basename $0 .sh)"
@@ -27,6 +28,7 @@ echo "Price: $PRICE"
 echo "Indoor temperature: $INDOORTEMP"
 echo "Outdoor temperature: $OUTDOORTEMP"
 
+PREVERROR=false
 LASTERROR=false
 LASTHIGHPRICE=false
 LASTCATCHUP=false
@@ -37,7 +39,7 @@ fi
 HIGHPRICE=$LASTHIGHPRICE
 CATCHUP=$LASTCATCHUP
 ERROR=false
-trap '(echo LASTERROR=$ERROR;echo LASTHIGHPRICE=$HIGHPRICE;echo LASTCATCHUP=$CATCHUP) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
+trap '(echo LASTERROR=$ERROR;echo PREVERROR=$LASTERROR;echo LASTHIGHPRICE=$HIGHPRICE;echo LASTCATCHUP=$CATCHUP) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
 MSG=""
 if [ -z "$PRICE" ] || [ "$PRICE" = null ]; then
     ERROR=true
@@ -57,20 +59,29 @@ mailprice()
     echo "Current electricity price: $PRICE"|mailmsg "$*"
 }
 if $ERROR; then
-    if ! $LASTERROR; then
+    if $LASTERROR; then
+	if ! $PREVERROR; then
+	    echo "$MSG"
+	    echo "$MSG"|mailmsg "Information unavailable twice"
+	fi
+    else
 	echo "$MSG"
-	echo "$MSG"|mailmsg "Information unavailable"
+	echo "Not mailing because there weren't yet two errors in a row"
     fi
     echo "STATUS:"
     echo "$STATUS"
     exit
-elif $LASTERROR; then
-    mailprice "Information available again"
+elif ! $LASTERROR; then
+    if $PREVERROR; then
+	mailprice "Information available twice again"
+    fi
+elif $PREVERROR; then
+    echo "Information available again but waiting for another error"
 fi
 
 if [[ "${PRICE%.*}" -ge "$MAXPRICE" ]]; then
     HIGHPRICE=true
-else
+elif $HIGHPRICE && [[ "${PRICE%.*}" -le "$LOWPRICE" ]]; then
     HIGHPRICE=false
 fi
 echo "HIGHPRICE: $HIGHPRICE"

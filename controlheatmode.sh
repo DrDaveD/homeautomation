@@ -32,6 +32,7 @@ PREVERROR=false
 LASTERROR=false
 LASTHIGHPRICE=false
 LASTCATCHUP=false
+LASTSWITCHERROR=false
 if [ -f $HERE/.status ]; then
     . $HERE/.status
 fi
@@ -39,7 +40,13 @@ fi
 HIGHPRICE=$LASTHIGHPRICE
 CATCHUP=$LASTCATCHUP
 ERROR=false
-trap '(echo LASTERROR=$ERROR;echo PREVERROR=$LASTERROR;echo LASTHIGHPRICE=$HIGHPRICE;echo LASTCATCHUP=$CATCHUP) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
+SWITCHERROR=false
+trap '(echo LASTERROR=$ERROR
+       echo PREVERROR=$LASTERROR
+       echo LASTHIGHPRICE=$HIGHPRICE
+       echo LASTCATCHUP=$CATCHUP
+       echo LASTSWITCHERROR=$SWITCHERROR
+       ) >$HERE/.status.new && mv $HERE/.status.new $HERE/.status; exit 0' 0
 MSG=""
 if [ -z "$PRICE" ] || [ "$PRICE" = null ]; then
     ERROR=true
@@ -157,9 +164,9 @@ INPUT="$(
 )"
 echo "$INPUT"|$CURL -f -X POST -H "Authorization: Bearer $ACCESSTOKEN" -H "Content-Type: application/json" "https://api.honeywell.com/v2/devices/thermostats/$DEVICEID?apikey=$CLIENTID&locationId=$LOCATIONID" -d @-
 if [ "$?" != 0 ]; then
-    ERROR=true
-    if $LASTERROR; then
-	echo "Switching thermostat mode failed"
+    SWITCHERROR=true
+    if $LASTSWITCHERROR; then
+	echo "Switching thermostat mode failed again"
     else
 	mailprice "Switching thermostat mode failed"
     fi

@@ -28,7 +28,7 @@ echo "Price: $PRICE"
 echo "Indoor temperature: $INDOORTEMP"
 echo "Outdoor temperature: $OUTDOORTEMP"
 
-PREVERROR=false
+MAILEDERROR=false
 LASTERROR=false
 LASTHIGHPRICE=false
 LASTCATCHUP=false
@@ -42,7 +42,7 @@ CATCHUP=$LASTCATCHUP
 ERROR=false
 SWITCHERROR=false
 trap '(echo LASTERROR=$ERROR
-       echo PREVERROR=$LASTERROR
+       echo MAILEDERROR=$MAILEDERROR
        echo LASTHIGHPRICE=$HIGHPRICE
        echo LASTCATCHUP=$CATCHUP
        echo LASTSWITCHERROR=$SWITCHERROR
@@ -66,24 +66,25 @@ mailprice()
     echo "Current electricity price: $PRICE"|mailmsg "$*"
 }
 if $ERROR; then
+    echo "$MSG"
     if $LASTERROR; then
-	if ! $PREVERROR; then
-	    echo "$MSG"
+	if ! $MAILEDERROR; then
 	    echo "$MSG"|mailmsg "Information unavailable twice"
+	    MAILEDERROR=true
 	fi
     else
-	echo "$MSG"
 	echo "Not mailing because there weren't yet two errors in a row"
     fi
     echo "STATUS:"
     echo "$STATUS"
     exit
 elif ! $LASTERROR; then
-    if $PREVERROR; then
+    if $MAILEDERROR; then
 	mailprice "Information available twice again"
+	MAILEDERROR=false
     fi
-elif $PREVERROR; then
-    echo "Information available again but waiting for another error"
+elif $MAILEDERROR; then
+    echo "Information available again but waiting for another cycle"
 fi
 
 if [[ "${PRICE%.*}" -ge "$MAXPRICE" ]]; then

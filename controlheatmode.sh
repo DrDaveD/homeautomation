@@ -11,7 +11,8 @@ echo "Datetime: $(date)"
 # Wait until other scripts are finished, after giving them a chance to start
 sleep 2
 FLOCKFILE=/dev/shm/homeautomation.flock
-flock 3 3<>$FLOCKFILE
+exec 3<>$FLOCKFILE
+flock 3
 
 CURL="curl -sm 15"
 

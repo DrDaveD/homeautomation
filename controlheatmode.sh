@@ -8,6 +8,11 @@ exec >>/var/log/$ME.log 2>&1
 echo
 echo "Datetime: $(date)"
 
+# Wait until other scripts are finished, after giving them a chance to start
+sleep 2
+FLOCKFILE=/dev/shm/homeautomation.flock
+flock 3 3<>$FLOCKFILE
+
 CURL="curl -sm 15"
 
 REFRESHTOKEN="$(sed -n 's/^refresh_token: //p' $HERE/secrets)"

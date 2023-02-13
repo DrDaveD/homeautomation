@@ -95,7 +95,7 @@ fi
 
 if [[ "${PRICE%.*}" -ge "$MAXPRICE" ]]; then
     HIGHPRICE=true
-elif $HIGHPRICE && [[ "${PRICE%.*}" -le "$LOWPRICE" ]]; then
+elif $HIGHPRICE && [[ "${PRICE%.*}" -lt "$LOWPRICE" ]]; then
     HIGHPRICE=false
 fi
 echo "HIGHPRICE: $HIGHPRICE"

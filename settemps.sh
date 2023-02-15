@@ -16,6 +16,9 @@ fi
 FLOCKFILE=/dev/shm/homeautomation.flock
 exec 3<>$FLOCKFILE
 flock 3
+# Leave some time for them to catch up so they will run ASAP
+# after this script is finished
+sleep 3
 
 CURL="curl -sm 15"
 

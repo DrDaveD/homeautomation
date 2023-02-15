@@ -5,14 +5,14 @@ LOWPRICE=4
 HERE="$(dirname $0)"
 ME="$(basename $0 .sh)"
 exec >>/var/log/$ME.log 2>&1
-echo
-echo "Datetime: $(date)"
-
 # Wait until other scripts are finished, after giving them a chance to start
 sleep 2
 FLOCKFILE=/dev/shm/homeautomation.flock
 exec 3<>$FLOCKFILE
 flock 3
+
+echo
+echo "Datetime: $(date)"
 
 CURL="curl -sm 15"
 

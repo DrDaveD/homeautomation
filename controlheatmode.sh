@@ -102,7 +102,7 @@ echo "HIGHPRICE: $HIGHPRICE"
 
 VALUES="$(echo "$STATUS"|jq .changeableValues)"
 PRESERVEVALS="heatSetpoint coolSetpoint thermostatSetpointStatus nextPeriodTime"
-for VAR in $PRESERVEVALS; do
+for VAR in mode $PRESERVEVALS; do
     eval $VAR="\`echo \"\$VALUES\"|jq -r .$VAR\`"
     eval echo "\$VAR: \$$VAR"
 done

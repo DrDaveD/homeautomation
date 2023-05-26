@@ -136,7 +136,9 @@ if [ "$HEATCOOLMODE" != Heat ]; then
 	    mailprice "Electricity price is low again"
 	fi
     fi
-    exit
+    if [ "$CATCHUP" = "$LASTCATCHUP" ]; then
+	exit
+    fi
 fi
 
 if [ "$HIGHPRICE" != "$LASTHIGHPRICE" ]; then

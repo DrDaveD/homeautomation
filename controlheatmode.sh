@@ -101,7 +101,7 @@ fi
 echo "HIGHPRICE: $HIGHPRICE"
 
 VALUES="$(echo "$STATUS"|jq .changeableValues)"
-PRESERVEVALS="heatSetpoint coolSetpoint thermostatSetpointStatus nextPeriodTime"
+PRESERVEVALS="heatCoolMode heatSetpoint coolSetpoint thermostatSetpointStatus nextPeriodTime"
 for VAR in mode $PRESERVEVALS; do
     eval $VAR="\`echo \"\$VALUES\"|jq -r .$VAR\`"
     eval echo "\$VAR: \$$VAR"
@@ -127,8 +127,9 @@ if [ "$HIGHPRICE" = "$LASTHIGHPRICE" ]; then
     fi
 fi
 
-HEATCOOLMODE="$(echo "$VALUES"|jq -r .heatCoolMode)"
-if [ "$HEATCOOLMODE" != Heat ]; then
+if [ "$heatCoolMode" != Heat ] || [ $TEMPDIFF -le -2 ] ; then
+    # don't turn on emergency heat when in cool mode or more than 2
+    # degrees over heat set point
     if [ "$HIGHPRICE" != "$LASTHIGHPRICE" ]; then
 	if $HIGHPRICE; then 
 	    mailprice "Electricity price has exceeded $MAXPRICE"

@@ -1,4 +1,9 @@
 #!/bin/bash
+# For ComEd hourly pricing and
+# Delivery Time of Day with a json file created with comed-rates.js
+# Controls Shelly Plug US Gen 4
+# Written by Dave Dykstra, 11/11/26
+
 MAXPRICE=20
 LOWPRICE=16
 

@@ -4,6 +4,7 @@ LOWPRICE=16
 
 HERE="$(dirname $0)"
 ME="$(basename $0 .sh)"
+exec >>/var/log/$ME.log 2>&1
 
 echo
 echo "Datetime: $(date)"

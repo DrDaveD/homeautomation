@@ -4,7 +4,7 @@
 # Controls Shelly Plug US Gen 4
 # Written by Dave Dykstra, 11/11/26
 
-MAXPRICE=20
+MAXPRICE=18
 LOWPRICE=16
 
 HERE="$(dirname $0)"

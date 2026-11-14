@@ -5,7 +5,7 @@
 # Written by Dave Dykstra, 11/11/26
 
 MAXPRICE=18
-LOWPRICE=16
+LOWPRICE=10
 
 HERE="$(dirname $0)"
 ME="$(basename $0 .sh)"
